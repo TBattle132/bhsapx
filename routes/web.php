@@ -1,38 +1,41 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\EnsureSuperuser;
 use App\Http\Controllers\CodeplugController;
-use App\Http\Controllers\RoomController;
 use App\Http\Controllers\AccessIdController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-Route::get('/', fn() => redirect()->route('dashboard'));
+// Public welcome
+Route::view('/', 'welcome')->name('welcome');
 
+// Auth-only area
 Route::middleware(['auth'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
 
     // Codeplugs
     Route::get('/cp', [CodeplugController::class, 'index'])->name('cp.index');
     Route::get('/cp/create', [CodeplugController::class, 'create'])->name('cp.create');
+    Route::post('/cp', [CodeplugController::class, 'store'])->name('cp.store');
     Route::get('/cp/{codeplug}/edit', [CodeplugController::class, 'edit'])->name('cp.edit');
-
-    // Rooms (nested)
-    Route::post('/cp/{codeplug}/rooms', [RoomController::class,'store'])->name('rooms.store');
-    Route::delete('/cp/{codeplug}/rooms/{room}', [RoomController::class,'destroy'])->name('rooms.destroy');
+    Route::put('/cp/{codeplug}', [CodeplugController::class, 'update'])->name('cp.update');
+    Route::delete('/cp/{codeplug}', [CodeplugController::class, 'destroy'])->name('cp.destroy');
 
     // Access IDs
     Route::get('/access', [AccessIdController::class, 'index'])->name('access.index');
     Route::get('/access/create', [AccessIdController::class, 'create'])->name('access.create');
-    Route::get('/access/{accessId}/edit', [AccessIdController::class, 'edit'])->name('access.edit');
+    Route::post('/access', [AccessIdController::class, 'store'])->name('access.store');
+    Route::get('/access/{access}/edit', [AccessIdController::class, 'edit'])->name('access.edit');
+    Route::put('/access/{access}', [AccessIdController::class, 'update'])->name('access.update');
+    Route::delete('/access/{access}', [AccessIdController::class, 'destroy'])->name('access.destroy');
 
+    // Logout (Breeze uses POST)
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 
-// Admin placeholder (already working)
-Route::middleware(['web', 'auth', 'ensure.superuser'])->group(function () {
+// Superuser area
+Route::middleware(['auth', 'ensure.superuser'])->group(function () {
     Route::view('/admin', 'admin.index')->name('admin.index');
 });
 
+// Breeze routes (login/register/etc)
 require __DIR__.'/auth.php';
-
-
-

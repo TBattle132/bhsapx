@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Codeplug extends Model
 {
-    protected $table = 'codeplugs';
+    use HasFactory;
 
     protected $fillable = [
         'account_id',
@@ -21,12 +21,8 @@ class Codeplug extends Model
         'default_hotkey',
     ];
 
-    protected $casts = [
-        'default_volume' => 'integer',
-    ];
-
-    public function account(): BelongsTo
+    public function accessIds()
     {
-        return $this->belongsTo(Account::class);
+        return $this->hasMany(AccessId::class);
     }
 }

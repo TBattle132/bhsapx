@@ -61,3 +61,15 @@
   </main>
 </body>
 </html>
+@extends('layouts.app')
+
+@section('title','Access denied')
+
+@section('content')
+<div class="card">
+  <h2 style="margin-top:0">403 — Access denied</h2>
+  <p class="muted">You don’t have permission to view this page.</p>
+  <p class="muted">If you think this is a mistake, contact a BHS superuser.</p>
+  <p style="margin-top:10px"><a class="btn" href="{{ route('dashboard') }}">Back to Dashboard</a></p>
+</div>
+@endsection

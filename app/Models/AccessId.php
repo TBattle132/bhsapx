@@ -2,45 +2,36 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AccessId extends Model
 {
+    use HasFactory;
+
     protected $table = 'access_ids';
 
-    // Match your real columns
     protected $fillable = [
         'account_id',
-        'user_id',
         'codeplug_id',
-        'access_id',   // human label/code shown to user (unique)
-        'id_value',    // the actual Radio ID value (unique)
-        'label',
-        'token',       // secret/token (unique)
+        'user_id',
+        'access_id',
         'active',
+        'label',
+        'token',
         'tx_allowed',
         'expires_at',
         'notes',
+        'id_value',
     ];
 
     protected $casts = [
-        'active'     => 'bool',
-        'tx_allowed' => 'bool',
+        'active' => 'boolean',
+        'tx_allowed' => 'boolean',
         'expires_at' => 'datetime',
     ];
 
-    public function account(): BelongsTo
-    {
-        return $this->belongsTo(Account::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function codeplug(): BelongsTo
+    public function codeplug()
     {
         return $this->belongsTo(Codeplug::class);
     }

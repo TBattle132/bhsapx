@@ -2,19 +2,21 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
-class AppServiceProvider extends ServiceProvider
+class AuthServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        //
-    }
+    protected $policies = [
+        // leave empty for now
+    ];
 
     public function boot(): void
     {
-        // Prevent "Specified key was too long" on older MySQL/MyISAM
-        Schema::defaultStringLength(191);
+        $this->registerPolicies();
+
+        Gate::define('superuser', function ($user) {
+            return (bool) ($user->is_superuser ?? false);
+        });
     }
 }
