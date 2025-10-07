@@ -2,31 +2,27 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // ← add this
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable; // ← include HasApiTokens
+    use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Mass assignable attributes.
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'account_id',
+        'is_superuser',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Hidden attributes for arrays/JSON.
      */
     protected $hidden = [
         'password',
@@ -34,15 +30,27 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Attribute casting.
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+        'is_superuser'      => 'boolean',
+    ];
+
+    /**
+     * Relationships
+     */
+    public function account()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Account::class);
+    }
+
+    /**
+     * Convenience: can this user access the admin area?
+     */
+    public function canAccessAdmin(): bool
+    {
+        return (bool) $this->is_superuser;
     }
 }

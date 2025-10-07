@@ -9,8 +9,9 @@ class EnsureSuperuser
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!$request->user() || !$request->user()->hasRole('superuser')) {
-            abort(403);
+        $user = $request->user();
+        if (!$user || !$user->is_superuser) {
+            abort(403, 'Forbidden');
         }
         return $next($request);
     }

@@ -2,59 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Codeplug;
+use App\Models\Room;
 use Illuminate\Http\Request;
-use App\Models\AccessId;
 
 class CodeplugController extends Controller
 {
-    /**
-     * GET /api/codeplug?id=<ACCESS_ID_STRING>
-     * Returns the codeplugs/rooms the authenticated user can use via that Access ID.
-     */
-    public function show(Request $request)
+    public function index()
     {
-        $accessIdStr = (string) $request->query('id', '');
-        if ($accessIdStr === '') {
-            return response()->json(['ok' => false, 'error' => 'Missing query parameter: id'], 422);
+        $u = auth()->user();
+        $q = Codeplug::query()->withCount('rooms')->latest();
+
+        if (!($u && method_exists($u,'hasRole') && $u->hasRole('superuser'))) {
+            $q->where('account_id', $u->account_id);
         }
 
-        $user = $request->user();
+        $codeplugs = $q->paginate(12);
+        return view('frontend.codeplugs.index', compact('codeplugs'));
+    }
 
-        // AccessID must belong to this user and be active
-        $access = AccessId::query()
-            ->where('access_id', $accessIdStr)
-            ->where('user_id', $user->id)
-            ->where('active', true)
-            ->with(['codeplugs.rooms'])
-            ->first();
+    public function create()
+    {
+        return view('frontend.codeplugs.create');
+    }
 
-        if (!$access) {
-            return response()->json(['ok' => false, 'error' => 'Access ID not found or not assigned to this user'], 403);
-        }
-
-        // Build response including pivot permissions
-        $result = $access->codeplugs->map(function ($cp) {
-            return [
-                'id' => $cp->id,
-                'name' => $cp->name,
-                'ws_url' => $cp->ws_url,
-                'auth_mode' => $cp->auth_mode,
-                'default_room' => $cp->default_room,
-                'default_volume' => $cp->default_volume,
-                'default_hotkey' => $cp->default_hotkey,
-                'permissions' => $cp->pivot->permissions ?? null, // array via cast
-                'rooms' => $cp->rooms->map(fn ($r) => [
-                    'id' => $r->id,
-                    'name' => $r->name,
-                    'sort' => $r->sort,
-                ])->values(),
-            ];
-        })->values();
-
-        return response()->json([
-            'ok' => true,
-            'access_id' => $accessIdStr,
-            'codeplugs' => $result,
+    public function store(Request $request)
+    {
+        $u = auth()->user();
+        $data = $request->validate([
+            'name'  => 'required|string|max:120',
+            'notes' => 'nullable|string',
         ]);
+
+        $cp = Codeplug::create([
+            'account_id' => ($u && method_exists($u,'hasRole') && $u->hasRole('superuser')) ? ($u->account_id ?? null) : $u->account_id,
+            'name'       => $data['name'],
+            'notes'      => $data['notes'] ?? null,
+        ]);
+
+        return redirect()->route('cp.index')->with('ok', 'Codeplug created.');
+    }
+
+    public function edit(Codeplug $codeplug)
+    {
+        $this->authorizeView($codeplug);
+        $rooms = $codeplug->rooms()->get();
+        return view('frontend.codeplugs.edit', compact('codeplug','rooms'));
+    }
+
+    public function update(Request $request, Codeplug $codeplug)
+    {
+        $this->authorizeView($codeplug);
+
+        $data = $request->validate([
+            'name'  => 'required|string|max:120',
+            'notes' => 'nullable|string',
+        ]);
+
+        $codeplug->update($data);
+        return back()->with('ok','Saved.');
+    }
+
+    public function destroy(Codeplug $codeplug)
+    {
+        $this->authorizeView($codeplug);
+        $codeplug->delete();
+        return redirect()->route('cp.index')->with('ok','Deleted.');
+    }
+
+    private function authorizeView(Codeplug $codeplug): void
+    {
+        $u = auth()->user();
+        if ($u && method_exists($u,'hasRole') && $u->hasRole('superuser')) return;
+        if ($u && $codeplug->account_id === $u->account_id) return;
+        abort(403);
     }
 }

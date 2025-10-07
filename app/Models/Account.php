@@ -3,13 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Account extends Model
 {
-    protected $fillable = ['name','owner_id'];
+    protected $table = 'accounts';
 
-    public function owner()   { return $this->belongsTo(User::class, 'owner_id'); }
-    public function users()   { return $this->hasMany(User::class); } // optional if you attach users later
-    public function codeplugs(){ return $this->hasMany(Codeplug::class); }
-    public function accessIds(){ return $this->hasMany(AccessId::class); }
+    protected $fillable = [
+        'name',
+        'notes',
+        // add other columns if you later add them to the table
+    ];
+
+    public function codeplugs(): HasMany
+    {
+        return $this->hasMany(Codeplug::class);
+    }
+
+    public function accessIds(): HasMany
+    {
+        return $this->hasMany(AccessId::class);
+    }
 }
