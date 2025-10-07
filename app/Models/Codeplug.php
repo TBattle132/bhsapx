@@ -24,4 +24,9 @@ class Codeplug extends Model
             ->withTimestamps()
             ->using(AccessIdCodeplug::class);
     }
+    public function account() 
+    {
+         return $this->belongsTo(Account::class); 
+    }
+
 }
