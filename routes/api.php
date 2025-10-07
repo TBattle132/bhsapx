@@ -1,9 +1,13 @@
 <?php
 
-use App\Http\Controllers\CodeplugController;
-use App\Http\Controllers\Api\CodeplugLookupController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CodeplugController;
 
-Route::middleware('auth:sanctum')->get('/codeplug', [CodeplugLookupController::class, 'showByAccessId']);
+Route::get('/health', fn () => response()->json(['ok' => true]));
 
-Route::get('/codeplug', [CodeplugController::class, 'show'])
-    ->middleware('auth:sanctum');
+// Versioned API
+Route::prefix('v1')->group(function () {
+    Route::post('/auth', [AuthController::class, 'auth'])->name('api.v1.auth');
+    Route::get('/codeplug', [CodeplugController::class, 'show'])->name('api.v1.codeplug');
+});

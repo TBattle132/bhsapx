@@ -21,8 +21,8 @@ class Codeplug extends Model
         'default_hotkey',
     ];
 
-    public function accessIds()
+    public function account()
     {
-        return $this->hasMany(AccessId::class);
+        return $this->belongsTo(Account::class);
     }
 }

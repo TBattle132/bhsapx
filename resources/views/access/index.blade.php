@@ -1,46 +1,74 @@
 @extends('layouts.app')
+
 @section('content')
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-xl font-semibold">Access IDs</h1>
-  <a href="{{ route('access.create') }}" class="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">New Access ID</a>
-</div>
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h2>Access IDs</h2>
+        <div class="muted">Provision tokens, map to codeplugs, set TX permissions & expirations.</div>
+      </div>
+      <div>
+        <a class="btn primary" href="{{ route('access.create') }}">+ New Access ID</a>
+      </div>
+    </div>
 
-<div class="overflow-hidden rounded border border-slate-700">
-  <table class="min-w-full text-sm">
-    <thead class="bg-slate-800/60">
-      <tr>
-        <th class="text-left px-3 py-2">ID</th>
-        <th class="text-left px-3 py-2">Label</th>
-        <th class="text-left px-3 py-2">Codeplug</th>
-        <th class="text-left px-3 py-2">TX</th>
-        <th class="text-left px-3 py-2">Active</th>
-        <th class="text-left px-3 py-2">Expires</th>
-        <th class="text-right px-3 py-2">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      @forelse($accessIds as $a)
-      <tr class="border-t border-slate-800">
-        <td class="px-3 py-2 font-mono">{{ $a->access_id }}</td>
-        <td class="px-3 py-2">{{ $a->label }}</td>
-        <td class="px-3 py-2">{{ optional($a->codeplug)->name }}</td>
-        <td class="px-3 py-2">{{ $a->tx_allowed ? 'Yes' : 'No' }}</td>
-        <td class="px-3 py-2">{{ $a->active ? 'Yes' : 'No' }}</td>
-        <td class="px-3 py-2">{{ $a->expires_at?->toDateString() ?? '—' }}</td>
-        <td class="px-3 py-2 text-right">
-          <a href="{{ route('access.edit', $a) }}" class="px-2 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white">Edit</a>
-          <form action="{{ route('access.destroy', $a) }}" method="POST" class="inline" onsubmit="return confirm('Delete this Access ID?')">
-            @csrf @method('DELETE')
-            <button class="px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white">Delete</button>
-          </form>
-        </td>
-      </tr>
-      @empty
-      <tr><td class="px-3 py-6 text-center text-slate-400" colspan="7">No access IDs yet.</td></tr>
-      @endforelse
-    </tbody>
-  </table>
-</div>
+    <div class="hr"></div>
 
-<div class="mt-4">{{ $accessIds->links() }}</div>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+        <tr>
+          <th>Label / Access ID</th>
+          <th>Codeplug</th>
+          <th>Status</th>
+          <th>Permissions</th>
+          <th>Expires</th>
+          <th style="width:240px">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        @forelse($accessIds as $a)
+          <tr>
+            <td>
+              <div style="font-weight:700">{{ $a->label ?? '—' }}</div>
+              <div class="muted" style="font-size:12px">ID: <strong>{{ $a->access_id }}</strong></div>
+              @if($a->notes)
+                <div class="muted" style="font-size:12px">{{ \Illuminate\Support\Str::limit($a->notes, 80) }}</div>
+              @endif
+            </td>
+            <td class="muted">{{ $a->codeplug?->name ?? '—' }}</td>
+            <td>
+              @if($a->active)
+                <span class="badge ok">Active</span>
+              @else
+                <span class="badge">Inactive</span>
+              @endif
+            </td>
+            <td>
+              @if($a->tx_allowed)
+                <span class="badge ok">TX Allowed</span>
+              @else
+                <span class="badge danger">TX Blocked</span>
+              @endif
+            </td>
+            <td class="muted">{{ $a->expires_at ? $a->expires_at->toDayDateTimeString() : '—' }}</td>
+            <td class="actions">
+              <a class="btn" href="{{ route('access.edit', $a) }}">Edit</a>
+              <form method="POST" action="{{ route('access.destroy', $a) }}" onsubmit="return confirm('Delete this Access ID?');">
+                @csrf @method('DELETE')
+                <button class="btn danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        @empty
+          <tr><td colspan="6" class="muted">No access IDs yet.</td></tr>
+        @endforelse
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:12px">
+      {{ $accessIds->links() }}
+    </div>
+  </div>
 @endsection

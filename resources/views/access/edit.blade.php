@@ -1,49 +1,81 @@
 @extends('layouts.app')
+
 @section('content')
-<h1 class="text-xl font-semibold mb-4">Edit Access ID</h1>
-<form method="POST" action="{{ route('access.update', $access) }}" class="grid gap-4 max-w-2xl">
-  @csrf @method('PUT')
+  <div class="card card--half">
+    <h2>Edit Access ID</h2>
+    <div class="muted">{{ $access->label ?? '—' }} • {{ $access->access_id }}</div>
+    <div class="hr"></div>
 
-  <x-input-label>Codeplug</x-input-label>
-  <select name="codeplug_id" class="bg-slate-800 border border-slate-700 rounded px-3 py-2">
-    @foreach($codeplugs as $cp)
-      <option value="{{ $cp->id }}" @selected($access->codeplug_id==$cp->id)>{{ $cp->name }}</option>
-    @endforeach
-  </select>
+    <form method="POST" action="{{ route('access.update', $access) }}">
+      @csrf @method('PUT')
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <x-input-label>Access ID (human)</x-input-label>
-      <input name="access_id" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" value="{{ $access->access_id }}" required>
-    </div>
-    <div>
-      <x-input-label>ID Value (device)</x-input-label>
-      <input name="id_value" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" value="{{ $access->id_value }}" required>
-    </div>
+      <label>Label</label>
+      <input type="text" name="label" value="{{ old('label',$access->label) }}">
+
+      <label>Codeplug</label>
+      <select name="codeplug_id">
+        <option value="">— None —</option>
+        @foreach($codeplugs as $cp)
+          <option value="{{ $cp->id }}" {{ (int)old('codeplug_id',$access->codeplug_id)===(int)$cp->id ? 'selected':'' }}>
+            {{ $cp->name }}
+          </option>
+        @endforeach
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label>Access ID (public)</label>
+          <input type="text" name="access_id" value="{{ old('access_id',$access->access_id) }}" required>
+        </div>
+        <div>
+          <label>Token (secret)</label>
+          <input type="text" name="token" value="{{ old('token',$access->token) }}">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>ID Value (display on LCD)</label>
+          <input type="text" name="id_value" value="{{ old('id_value',$access->id_value) }}" required>
+        </div>
+        <div>
+          <label>Expires At</label>
+          <input
+            type="text"
+            name="expires_at"
+            value="{{ old('expires_at', optional($access->expires_at)->format('Y-m-d H:i:s')) }}"
+            placeholder="YYYY-MM-DD HH:MM:SS or leave blank"
+          >
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Status</label>
+          <select name="active">
+            @php $activeOld = old('active', (string)$access->active); @endphp
+            <option value="1" {{ $activeOld==='1' ? 'selected':'' }}>Active</option>
+            <option value="0" {{ $activeOld==='0' ? 'selected':'' }}>Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label>TX Allowed</label>
+          <select name="tx_allowed">
+            @php $txOld = old('tx_allowed', (string)$access->tx_allowed); @endphp
+            <option value="1" {{ $txOld==='1' ? 'selected':'' }}>Yes</option>
+            <option value="0" {{ $txOld==='0' ? 'selected':'' }}>No</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Notes</label>
+      <input type="text" name="notes" value="{{ old('notes',$access->notes) }}">
+
+      <div class="hr"></div>
+      <div class="actions">
+        <a class="btn ghost" href="{{ route('access.index') }}">Back</a>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
   </div>
-
-  <x-input-label>Label (optional)</x-input-label>
-  <input name="label" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" value="{{ $access->label }}">
-
-  <div class="grid grid-cols-3 gap-4">
-    <label class="inline-flex items-center gap-2">
-      <input type="checkbox" name="tx_allowed" value="1" @checked($access->tx_allowed)> <span>TX Allowed</span>
-    </label>
-    <label class="inline-flex items-center gap-2">
-      <input type="checkbox" name="active" value="1" @checked($access->active)> <span>Active</span>
-    </label>
-    <div>
-      <x-input-label>Expires (optional)</x-input-label>
-      <input type="date" name="expires_at" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" value="{{ $access->expires_at?->format('Y-m-d') }}">
-    </div>
-  </div>
-
-  <x-input-label>Notes</x-input-label>
-  <textarea name="notes" rows="4" class="bg-slate-800 border border-slate-700 rounded px-3 py-2">{{ $access->notes }}</textarea>
-
-  <div class="flex gap-2">
-    <button class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Update</button>
-    <a href="{{ route('access.index') }}" class="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600">Cancel</a>
-  </div>
-</form>
 @endsection

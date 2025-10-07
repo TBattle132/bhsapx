@@ -26,13 +26,23 @@ class AccessId extends Model
     ];
 
     protected $casts = [
-        'active' => 'boolean',
+        'active'     => 'boolean',
         'tx_allowed' => 'boolean',
         'expires_at' => 'datetime',
     ];
 
+    public function account()
+    {
+        return $this->belongsTo(Account::class);
+    }
+
     public function codeplug()
     {
         return $this->belongsTo(Codeplug::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

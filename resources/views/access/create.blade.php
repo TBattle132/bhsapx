@@ -1,49 +1,73 @@
 @extends('layouts.app')
+
 @section('content')
-<h1 class="text-xl font-semibold mb-4">New Access ID</h1>
-<form method="POST" action="{{ route('access.store') }}" class="grid gap-4 max-w-2xl">
-  @csrf
+  <div class="card card--half">
+    <h2>New Access ID</h2>
+    <div class="hr"></div>
 
-  <x-input-label>Codeplug</x-input-label>
-  <select name="codeplug_id" class="bg-slate-800 border border-slate-700 rounded px-3 py-2">
-    @foreach($codeplugs as $cp)
-      <option value="{{ $cp->id }}">{{ $cp->name }}</option>
-    @endforeach
-  </select>
+    <form method="POST" action="{{ route('access.store') }}">
+      @csrf
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <x-input-label>Access ID (human)</x-input-label>
-      <input name="access_id" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" required>
-    </div>
-    <div>
-      <x-input-label>ID Value (device)</x-input-label>
-      <input name="id_value" class="bg-slate-800 border border-slate-700 rounded px-3 py-2" required>
-    </div>
+      <label>Label</label>
+      <input type="text" name="label" value="{{ old('label') }}" placeholder="Dispatcher console, EOC #2…">
+
+      <label>Codeplug</label>
+      <select name="codeplug_id">
+        <option value="">— None —</option>
+        @foreach($codeplugs as $cp)
+          <option value="{{ $cp->id }}" {{ old('codeplug_id')==$cp->id?'selected':'' }}>
+            {{ $cp->name }}
+          </option>
+        @endforeach
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label>Access ID (public)</label>
+          <input type="text" name="access_id" value="{{ old('access_id') }}" required>
+        </div>
+        <div>
+          <label>Token (secret)</label>
+          <input type="text" name="token" value="{{ old('token') }}" placeholder="Auto if blank">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>ID Value (display on LCD)</label>
+          <input type="text" name="id_value" value="{{ old('id_value') }}" required>
+        </div>
+        <div>
+          <label>Expires At</label>
+          <input type="text" name="expires_at" value="{{ old('expires_at') }}" placeholder="YYYY-MM-DD HH:MM:SS or leave blank">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Status</label>
+          <select name="active">
+            <option value="1" {{ old('active','1')==='1'?'selected':'' }}>Active</option>
+            <option value="0" {{ old('active')==='0'?'selected':'' }}>Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label>TX Allowed</label>
+          <select name="tx_allowed">
+            <option value="1" {{ old('tx_allowed','0')==='1'?'selected':'' }}>Yes</option>
+            <option value="0" {{ old('tx_allowed','0')==='0'?'selected':'' }}>No</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Notes</label>
+      <input type="text" name="notes" value="{{ old('notes') }}">
+
+      <div class="hr"></div>
+      <div class="actions">
+        <a class="btn ghost" href="{{ route('access.index') }}">Cancel</a>
+        <button class="btn primary" type="submit">Create</button>
+      </div>
+    </form>
   </div>
-
-  <x-input-label>Label (optional)</x-input-label>
-  <input name="label" class="bg-slate-800 border border-slate-700 rounded px-3 py-2">
-
-  <div class="grid grid-cols-3 gap-4">
-    <label class="inline-flex items-center gap-2">
-      <input type="checkbox" name="tx_allowed" value="1"> <span>TX Allowed</span>
-    </label>
-    <label class="inline-flex items-center gap-2">
-      <input type="checkbox" name="active" value="1" checked> <span>Active</span>
-    </label>
-    <div>
-      <x-input-label>Expires (optional)</x-input-label>
-      <input type="date" name="expires_at" class="bg-slate-800 border border-slate-700 rounded px-3 py-2">
-    </div>
-  </div>
-
-  <x-input-label>Notes</x-input-label>
-  <textarea name="notes" rows="4" class="bg-slate-800 border border-slate-700 rounded px-3 py-2"></textarea>
-
-  <div class="flex gap-2">
-    <button class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Save</button>
-    <a href="{{ route('access.index') }}" class="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600">Cancel</a>
-  </div>
-</form>
 @endsection

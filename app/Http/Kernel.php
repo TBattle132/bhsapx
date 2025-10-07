@@ -62,4 +62,9 @@ class Kernel extends HttpKernel
         // 👇 our admin gate
         'ensure.superuser' => \App\Http\Middleware\EnsureSuperuser::class,
     ];
+    protected $routeMiddleware = [
+    // ...
+    'api.access' => \App\Http\Middleware\Api\EnsureAccessAuthorized::class,
+    ];
+
 }

@@ -1,10 +1,26 @@
 @extends('layouts.app')
 
 @section('content')
-  <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <a href="{{ route('cp.index') }}" class="p-6 rounded border border-slate-700 bg-slate-800/40 hover:bg-slate-800">Manage Codeplugs</a>
-    <a href="{{ route('access.index') }}" class="p-6 rounded border border-slate-700 bg-slate-800/40 hover:bg-slate-800">Manage Access IDs</a>
-    <a href="{{ route('admin.index') }}" class="p-6 rounded border border-slate-700 bg-slate-800/40 hover:bg-slate-800">Admin</a>
+  <div class="cards">
+    <div class="card card--third">
+      <h2>Codeplugs</h2>
+      <p class="muted">Create and manage community or org codeplugs used by the APX client.</p>
+      <div class="hr"></div>
+      <a class="btn primary" href="{{ route('cp.index') }}">Open Codeplugs</a>
+    </div>
+
+    <div class="card card--third">
+      <h2>Access IDs</h2>
+      <p class="muted">Provision Access IDs, tokens and TX permissions for users/devices.</p>
+      <div class="hr"></div>
+      <a class="btn primary" href="{{ route('access.index') }}">Open Access IDs</a>
+    </div>
+
+    <div class="card card--third">
+      <h2>Admin</h2>
+      <p class="muted">Superuser operations, global controls and system oversight.</p>
+      <div class="hr"></div>
+      <a class="btn ghost" href="{{ route('admin.index') }}">Open Admin</a>
+    </div>
   </div>
 @endsection
