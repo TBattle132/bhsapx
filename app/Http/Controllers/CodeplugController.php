@@ -3,78 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Models\Codeplug;
-use App\Models\Room;
 use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
 
 class CodeplugController extends Controller
 {
-    public function index()
-    {
-        $u = auth()->user();
-        $q = Codeplug::query()->withCount('rooms')->latest();
+    // ⛔️ No $this->middleware() here.
 
-        if (!($u && method_exists($u,'hasRole') && $u->hasRole('superuser'))) {
-            $q->where('account_id', $u->account_id);
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+
+        $query = Codeplug::query();
+
+        if (!$user->is_superuser) {
+            // non-superuser: only see items under their account (adapt as needed)
+            $query->where('account_id', $user->account_id ?? 0);
         }
 
-        $codeplugs = $q->paginate(12);
-        return view('frontend.codeplugs.index', compact('codeplugs'));
-    }
+        $items = $query->latest()->paginate(15);
 
-    public function create()
-    {
-        return view('frontend.codeplugs.create');
-    }
-
-    public function store(Request $request)
-    {
-        $u = auth()->user();
-        $data = $request->validate([
-            'name'  => 'required|string|max:120',
-            'notes' => 'nullable|string',
+        return view('cp.index', [
+            'items' => $items,
         ]);
-
-        $cp = Codeplug::create([
-            'account_id' => ($u && method_exists($u,'hasRole') && $u->hasRole('superuser')) ? ($u->account_id ?? null) : $u->account_id,
-            'name'       => $data['name'],
-            'notes'      => $data['notes'] ?? null,
-        ]);
-
-        return redirect()->route('cp.index')->with('ok', 'Codeplug created.');
     }
 
-    public function edit(Codeplug $codeplug)
+    public function create(): View
     {
-        $this->authorizeView($codeplug);
-        $rooms = $codeplug->rooms()->get();
-        return view('frontend.codeplugs.edit', compact('codeplug','rooms'));
+        return view('cp.create');
     }
 
-    public function update(Request $request, Codeplug $codeplug)
+    public function edit(Codeplug $codeplug): View
     {
-        $this->authorizeView($codeplug);
-
-        $data = $request->validate([
-            'name'  => 'required|string|max:120',
-            'notes' => 'nullable|string',
-        ]);
-
-        $codeplug->update($data);
-        return back()->with('ok','Saved.');
-    }
-
-    public function destroy(Codeplug $codeplug)
-    {
-        $this->authorizeView($codeplug);
-        $codeplug->delete();
-        return redirect()->route('cp.index')->with('ok','Deleted.');
-    }
-
-    private function authorizeView(Codeplug $codeplug): void
-    {
-        $u = auth()->user();
-        if ($u && method_exists($u,'hasRole') && $u->hasRole('superuser')) return;
-        if ($u && $codeplug->account_id === $u->account_id) return;
-        abort(403);
+        return view('cp.edit', ['item' => $codeplug]);
     }
 }
