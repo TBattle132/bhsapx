@@ -1,61 +1,50 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use App\Models\AccessId;
 
 class AuthController extends Controller
 {
     /**
      * POST /api/v1/auth
-     * body: { "access_id": "1321" }
-     * returns: { "token": "...", "expires_at": "..." }
+     * Body JSON: { "access_id": "1321" }
      */
     public function auth(Request $request)
     {
         $v = Validator::make($request->all(), [
-            'access_id' => ['required','string','max:128'],
+            'access_id' => ['required', 'string', 'max:128'],
         ]);
 
         if ($v->fails()) {
-            return response()->json(['error' => 'Bad request', 'details' => $v->errors()], 422);
+            return response()->json(['message' => 'Invalid request', 'errors' => $v->errors()], 422);
         }
 
-        $accessId = $request->input('access_id');
+        $access = AccessId::where('access_id', $request->input('access_id'))->first();
 
-        $row = AccessId::query()
-            ->where('access_id', $accessId)
-            ->where('active', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->first();
-
-        if (!$row) {
-            // Not found / inactive / expired
-            return response()->json(['error' => 'Forbidden'], 403);
+        if (!$access) {
+            return response()->json(['message' => 'Access ID not found'], 404);
         }
 
-        // Issue or reuse a token
-        if (empty($row->token)) {
-            $row->token = Str::random(48);
+        if (!$access->active) {
+            return response()->json(['message' => 'Access ID inactive'], 403);
         }
-        // Optional: rotate token every login
-        // $row->token = Str::random(48);
 
-        $row->save();
+        if ($access->expires_at && now()->greaterThan($access->expires_at)) {
+            return response()->json(['message' => 'Access ID expired'], 403);
+        }
 
-        // You can set a separate token expiry if you want;
-        // here we mirror the row expiry (or 24h if null).
-        $expires = $row->expires_at ?? now()->addDay();
+        // Issue/refresh token
+        $access->token = Str::random(40);
+        $access->save();
 
         return response()->json([
-            'token'      => $row->token,
-            'expires_at' => $expires->toISOString()
+            'token'      => $access->token,
+            'expires_at' => $access->expires_at,
         ]);
     }
 }

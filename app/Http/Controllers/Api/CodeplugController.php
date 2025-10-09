@@ -11,62 +11,68 @@ class CodeplugController extends Controller
 {
     /**
      * GET /api/v1/codeplug
-     * headers:
+     * Headers:
      *   X-Access-ID: 1321
-     *   X-Access-Token: <token from /auth>
-     *
-     * returns a shape your WPF app expects
+     *   X-Access-Token: <token from /api/v1/auth>
      */
-    public function show(Request $request)
+    public function index(Request $request)
     {
-        $id    = $request->header('X-Access-ID');
-        $token = $request->header('X-Access-Token');
+        $accessId  = $request->header('X-Access-ID');
+        $token     = $request->header('X-Access-Token');
 
-        if (!$id || !$token) {
+        if (!$accessId || !$token) {
             return response()->json(['error' => 'Missing headers'], 400);
         }
 
-        $row = AccessId::query()
-            ->where('access_id', $id)
-            ->where('token', $token)
-            ->where('active', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->first();
+        $access = AccessId::where('access_id', $accessId)->first();
 
-        if (!$row) {
-            return response()->json(['valid' => false, 'error' => 'Forbidden'], 403);
+        if (!$access || !$access->active) {
+            return response()->json(['error' => 'Access not found or inactive'], 403);
         }
 
-        // Load codeplug if linked
+        if ($access->token !== $token) {
+            return response()->json(['error' => 'Invalid token'], 403);
+        }
+
+        if ($access->expires_at && now()->greaterThan($access->expires_at)) {
+            return response()->json(['error' => 'Token expired'], 403);
+        }
+
+        // Load the codeplug bound to this access row
         $cp = null;
-        if ($row->codeplug_id) {
-            $cp = Codeplug::find($row->codeplug_id);
+        if ($access->codeplug_id) {
+            $cp = Codeplug::find($access->codeplug_id);
         }
 
-        // Fallbacks if codeplug row missing
-        $wsUrl         = $cp->ws_url         ?? 'ws://127.0.0.1:5001';
-        $defaultRoom   = $cp->default_room   ?? 'Dispatch';
-        $defaultVolume = (int)($cp->default_volume ?? 70);
-        $hotkey        = $cp->default_hotkey ?? 'F9';
+        if (!$cp) {
+            // Fall back: try any default codeplug (or return 404)
+            $cp = Codeplug::orderBy('id', 'asc')->first();
+            if (!$cp) {
+                return response()->json(['error' => 'No codeplug configured'], 404);
+            }
+        }
 
-        // Build rooms list (static for now; adjust if you store zones/channels)
-        $rooms = [$defaultRoom, 'TAC 1', 'TAC 2'];
-
-        return response()->json([
-            'valid'        => true,
-            'wsUrl'        => $wsUrl,
-            'canTx'        => (bool)$row->tx_allowed,
-            'radioId'      => $row->id_value ?: '—',
-            'rooms'        => $rooms,
-            'defaultRoom'  => $defaultRoom,
-            'volume'       => $defaultVolume,
-            'pttHotkey'    => $hotkey,
-            'auth' => [
-                'mode'      => 'SIMPLE',
-                'simpleKey' => $cp->simple_key ?? 'YourSharedKeyHere',
+        // Map DB -> JSON the app expects
+        // Your columns from earlier messages:
+        // codeplugs: ws_url, auth_mode, simple_key, default_room, default_volume, default_hotkey
+        // access_ids: tx_allowed
+        $payload = [
+            'valid'       => true,
+            'wsUrl'       => $cp->ws_url,
+            'auth'        => [
+                'mode'      => $cp->auth_mode,
+                'simpleKey' => $cp->simple_key,
             ],
-        ]);
+            'pttHotkey'   => $cp->default_hotkey,
+            'defaultRoom' => $cp->default_room,
+            'canTx'       => (bool) $access->tx_allowed,
+            // You can optionally provide a curated list:
+            'rooms'       => [$cp->default_room, 'TAC 1', 'TAC 2', 'Dispatch'],
+            'volume'      => (int) $cp->default_volume,
+            // A radio ID the gateway may also send back later; use something stable-ish:
+            'radioId'     => $access->id_value ?? (string)$access->id,
+        ];
+
+        return response()->json($payload);
     }
 }
